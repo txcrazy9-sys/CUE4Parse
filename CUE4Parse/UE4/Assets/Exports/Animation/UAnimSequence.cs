@@ -323,7 +323,15 @@ namespace CUE4Parse.UE4.Assets.Exports.Animation
             // Lookup our codecs in our settings assets
             BoneCompressionCodec = BoneCompressionSettings?.Load<UAnimBoneCompressionSettings>()?.GetCodec(boneCodecDDCHandle);
             CurveCompressionCodec = CurveCompressionSettings?.Load<UAnimCurveCompressionSettings>()?.GetCodec(curveCodecPath);
-
+            
+            // cookie fix for Strinova's animation curve data
+            if (Ar.Game == EGame.GAME_Strinova && CurveCompressionCodec == null)
+            {
+                const string defaultCurveSettingsPath = "/Engine/Content/Animation/DefaultAnimCurveCompressionSettings.DefaultAnimCurveCompressionSettings";
+                CurveCompressionSettings = new ResolvedLoadedObject(Owner!.Provider!.LoadPackageObject(defaultCurveSettingsPath));
+                CurveCompressionCodec = CurveCompressionSettings.Load<UAnimCurveCompressionSettings>()?.GetCodec(curveCodecPath);
+            }
+            
             if (BoneCompressionCodec != null)
             {
                 CompressedDataStructure = BoneCompressionCodec.AllocateAnimData();
