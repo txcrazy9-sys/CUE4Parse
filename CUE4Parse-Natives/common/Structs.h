@@ -74,7 +74,7 @@ struct FACLTransform final : public FTransform
 {
     RTM_FORCE_INLINE void RTM_SIMD_CALL SetRotationRaw(rtm::quatf_arg0 Rotation_)
     {
-        rtm::quat_store(Rotation_, &Rotation.X);
+        acl::quat_unaligned_write(Rotation_, &Rotation.X);
     }
 
     RTM_FORCE_INLINE void RTM_SIMD_CALL SetTranslationRaw(rtm::vector4f_arg0 Translation_)

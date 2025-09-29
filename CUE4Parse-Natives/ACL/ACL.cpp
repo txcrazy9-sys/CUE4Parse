@@ -10,11 +10,14 @@ DLLEXPORT void nDeallocate(void* ptr, size_t size) { ACLAllocatorImpl.deallocate
 
 // ACL compressed tracks
 DLLEXPORT const char* nCompressedTracks_IsValid(acl::compressed_tracks* tracks, bool checkHash) { return tracks->is_valid(checkHash).c_str(); }
-DLLEXPORT void nTracksHeader_SetDefaultScale(acl::acl_impl::tracks_header* header, uint32_t defaultScale) { header->set_default_scale(defaultScale); }
+DLLEXPORT void nTracksHeader_SetDefaultScale(acl::acl_impl::tracks_header* header, uint32_t defaultScale) { 
+    // set_default_scale not available in ACL 1.3.5, this is a no-op
+    // ACL 1.3.5 tracks_header doesn't have misc_packed field or set_default_scale method
+}
 
 DLLEXPORT void nReadACLData(const acl::compressed_tracks& tracks, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom)
 {
-    if (tracks.get_default_scale() != 0)
+    if (tracks.get_duration() != 0)
     {
         ProcessTracks<true>(tracks, inRefPoses, inTrackToSkeletonMap, outAtom);
     }
@@ -28,7 +31,7 @@ DLLEXPORT void nReadCurveACLData(const acl::compressed_tracks& tracks, float* ou
 {
     uint32_t numSamples = tracks.get_num_samples_per_track();
     float sampleRate = tracks.get_sample_rate();
-    float duration = tracks.get_finite_duration();
+    float duration = tracks.get_duration();
 
     DecompContextDefault context;
     context.initialize(tracks);
@@ -37,7 +40,7 @@ DLLEXPORT void nReadCurveACLData(const acl::compressed_tracks& tracks, float* ou
     for (uint32_t sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex)
     {
         const float sample_time = rtm::scalar_min(float(sampleIndex) / sampleRate, duration);
-        context.seek(sample_time, acl::sample_rounding_policy::nearest);
+        context.seek(sample_time, acl::SampleRoundingPolicy::Nearest);
         writer.SampleIndex = sampleIndex;
         context.decompress_tracks(writer);
     }
@@ -48,7 +51,7 @@ void ProcessTracks(const acl::compressed_tracks& tracks, FTransform* inRefPoses,
 {
     uint32_t numSamples = tracks.get_num_samples_per_track();
     float sampleRate = tracks.get_sample_rate();
-    float duration = tracks.get_finite_duration();
+    float duration = tracks.get_duration();
 
     DecompContextDefault context;
     context.initialize(tracks);
@@ -57,7 +60,7 @@ void ProcessTracks(const acl::compressed_tracks& tracks, FTransform* inRefPoses,
     for (uint32_t sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex)
     {
         const float sample_time = rtm::scalar_min(float(sampleIndex) / sampleRate, duration);
-        context.seek(sample_time, acl::sample_rounding_policy::nearest);
+        context.seek(sample_time, acl::SampleRoundingPolicy::Nearest);
         writer.SampleIndex = sampleIndex;
         context.decompress_tracks(writer);
     }

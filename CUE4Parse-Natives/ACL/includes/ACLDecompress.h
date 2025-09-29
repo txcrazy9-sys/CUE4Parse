@@ -2,7 +2,7 @@
 #include "ACLFramework.h"
 
 inline rtm::vector4f RTM_SIMD_CALL UEVector3ToACL(const FVector& Input) { return rtm::vector_set(Input.X, Input.Y, Input.Z); }
-inline rtm::quatf RTM_SIMD_CALL UEQuatToACL(const FQuat& Input) { return rtm::quat_set(Input.X, Input.Y, Input.Z, Input.W); }
+inline rtm::quatf RTM_SIMD_CALL UEQuatToACL(const FQuat& Input) { return acl::quat_set(Input.X, Input.Y, Input.Z, Input.W); }
 
 template<bool bUseBindPose>
 struct FCUE4ParseOutputWriter final : public acl::track_writer
