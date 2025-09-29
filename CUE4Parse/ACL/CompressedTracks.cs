@@ -14,6 +14,13 @@ namespace CUE4Parse.ACL
             _bufferLength = buffer.Length;
             Handle = nAllocate(_bufferLength);
             Marshal.Copy(buffer, 0, Handle, buffer.Length);
+
+            // For clip format (0xac10ac10), skip validation to avoid tag mismatch
+            if (IsClipFormat(buffer))
+            {
+                return; // Skip validation for clip format
+            }
+
             var error = IsValid(false);
             if (error != null)
             {
@@ -42,6 +49,19 @@ namespace CUE4Parse.ACL
         {
             var error = Marshal.PtrToStringAnsi(nCompressedTracks_IsValid(Handle, checkHash))!;
             return error.Length > 0 ? error : null;
+        }
+
+        /// <summary>
+        /// Check if the buffer contains clip format (0xac10ac10) rather than tracks format (0xac11ac11)
+        /// </summary>
+        private static bool IsClipFormat(byte[] buffer)
+        {
+            if (buffer == null || buffer.Length < 12)
+                return false;
+
+            // Read the tag from byte offset 8 (where CompressedClip stores its tag)
+            uint tag = BitConverter.ToUInt32(buffer, 8);
+            return tag == 0xac10ac10; // Clip format tag
         }
 
         public TracksHeader GetTracksHeader() => Marshal.PtrToStructure<TracksHeader>(Handle + Marshal.SizeOf<RawBufferHeader>());

@@ -21,9 +21,6 @@ struct FCUE4ParseOutputWriter final : public acl::track_writer
         , NumSamples(inNumSamples)
     {}
 
-    static constexpr acl::default_sub_track_mode get_default_rotation_mode() { return bUseBindPose ? acl::default_sub_track_mode::variable : acl::default_sub_track_mode::constant; }
-    static constexpr acl::default_sub_track_mode get_default_translation_mode() { return bUseBindPose ? acl::default_sub_track_mode::variable : acl::default_sub_track_mode::constant; }
-    static constexpr acl::default_sub_track_mode get_default_scale_mode() { return bUseBindPose ? acl::default_sub_track_mode::variable : acl::default_sub_track_mode::legacy; }
 
     RTM_FORCE_INLINE rtm::quatf RTM_SIMD_CALL get_variable_default_rotation(uint32_t trackIndex) const
     {

@@ -1,5 +1,7 @@
 ﻿using System;
+using CUE4Parse.ACL;
 using CUE4Parse.UE4.Assets.Readers;
+using CUE4Parse.UE4.Objects.UObject;
 using Newtonsoft.Json;
 
 namespace CUE4Parse.UE4.Assets.Exports.Animation.ACL
@@ -18,8 +20,8 @@ namespace CUE4Parse.UE4.Assets.Exports.Animation.ACL
         /** The sequence name hash that owns this data. */
         public uint SequenceNameHash;
 
-        /*/** Holds the compressed_tracks instance for the anim sequence #1#
-        public byte[] CompressedClip;*/
+        /** Holds the compressed_tracks instance for the anim sequence #1# */
+        public byte[] CompressedClip;
 
         public void SerializeCompressedData(FAssetArchive Ar)
         {
@@ -27,17 +29,18 @@ namespace CUE4Parse.UE4.Assets.Exports.Animation.ACL
 
             SequenceNameHash = Ar.Read<uint>();
 
-            /*if (!Ar.Owner.HasFlags(EPackageFlags.PKG_FilterEditorOnly))
+            if (!Ar.Owner.HasFlags(EPackageFlags.PKG_FilterEditorOnly))
             {
                 CompressedClip = Ar.ReadArray<byte>();
-            }*/
+            }
         }
 
         public void Bind(byte[] bulkData)
         {
-            //var compressedClipData = new CompressedTracks(bulkData);
-            throw new NotImplementedException();
+            CompressedClip = bulkData;
         }
+
+        public CompressedTracks GetCompressedTracks() => new(CompressedClip);
     }
 
     public class UAnimBoneCompressionCodec_ACLDatabase : UAnimBoneCompressionCodec_ACLBase

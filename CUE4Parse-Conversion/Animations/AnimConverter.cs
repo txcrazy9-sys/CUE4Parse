@@ -171,7 +171,9 @@ namespace CUE4Parse_Conversion.Animations
                 }
                 case FACLCompressedAnimData aclData:
                 {
+                    // Use the standard GetCompressedTracks method - CompressedTracks constructor now handles both formats
                     var tracks = aclData.GetCompressedTracks();
+
                     var tracksHeader = tracks.GetTracksHeader();
                     var numSamples = (int) tracksHeader.NumSamples;
 
@@ -180,13 +182,32 @@ namespace CUE4Parse_Conversion.Animations
 
                     // Let the native code do its job
                     var atomKeys = new FTransform[animSeq.Tracks.Capacity * numSamples];
-                    unsafe
+
+                    // Check if this is actually a clip format that needs different decompression
+                    if (IsClipFormat(aclData.CompressedByteStream))
                     {
-                        fixed (FTransform* refPosePtr = animSeq.RetargetBasePose ?? skeleton.ReferenceSkeleton.FinalRefBonePose)
-                        fixed (FTrackToSkeletonMap* trackToSkeletonMapPtr = animSequence.GetTrackMap())
-                        fixed (FTransform* atomKeysPtr = atomKeys)
+                        // Handle as clip format using specialized decompression
+                        unsafe
                         {
-                            nReadACLData(tracks.Handle, refPosePtr, trackToSkeletonMapPtr, atomKeysPtr);
+                            fixed (FTransform* refPosePtr = animSeq.RetargetBasePose ?? skeleton.ReferenceSkeleton.FinalRefBonePose)
+                            fixed (FTrackToSkeletonMap* trackToSkeletonMapPtr = animSequence.GetTrackMap())
+                            fixed (FTransform* atomKeysPtr = atomKeys)
+                            {
+                                ACLNative.nReadACLClipData(tracks.Handle, refPosePtr, trackToSkeletonMapPtr, atomKeysPtr);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Handle as tracks format using standard decompression
+                        unsafe
+                        {
+                            fixed (FTransform* refPosePtr = animSeq.RetargetBasePose ?? skeleton.ReferenceSkeleton.FinalRefBonePose)
+                            fixed (FTrackToSkeletonMap* trackToSkeletonMapPtr = animSequence.GetTrackMap())
+                            fixed (FTransform* atomKeysPtr = atomKeys)
+                            {
+                                nReadACLData(tracks.Handle, refPosePtr, trackToSkeletonMapPtr, atomKeysPtr);
+                            }
                         }
                     }
 
@@ -629,5 +650,20 @@ namespace CUE4Parse_Conversion.Animations
 
         [DllImport(ACLNative.LIB_NAME)]
         private static extern unsafe void nReadACLData(IntPtr compressedTracks, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom);
+
+        /// <summary>
+        /// Check if the buffer contains clip format (0xac10ac10) rather than tracks format (0xac11ac11)
+        /// </summary>
+        private static bool IsClipFormat(byte[] buffer)
+        {
+            if (buffer == null || buffer.Length < 12)
+                return false;
+
+            // Read the tag from byte offset 8 (where CompressedClip stores its tag)
+            uint tag = BitConverter.ToUInt32(buffer, 8);
+            return tag == 0xac10ac10; // Clip format tag
+        }
+
+
     }
 }

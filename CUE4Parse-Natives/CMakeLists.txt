@@ -15,6 +15,7 @@ endif()
 # ACL
 if (WITH_ACL)
         add_compile_definitions(WITH_ACL)
+        add_compile_definitions(WIN_EXPORT)
         include_directories("${PROJECT_SOURCE_DIR}/ACL/external/acl/includes")
         include_directories("${PROJECT_SOURCE_DIR}/ACL/external/acl/external/rtm/includes")
         set(SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/ACL/ACL.cpp)
