@@ -53,6 +53,19 @@
     <CMakeBuildDir>$(CMakeProject)builddir</CMakeBuildDir>
   </PropertyGroup>
 
+  <!-- 无条件包含 native DLL，确保发布时总是包含 -->
+  <ItemGroup>
+    <Content Include="..\CUE4Parse-Natives\bin\$(Configuration)\CUE4Parse-Natives.dll" Condition="Exists('..\CUE4Parse-Natives\bin\$(Configuration)\CUE4Parse-Natives.dll') And '$(OS)' == 'Windows_NT'">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackagePath>lib/$(TargetFramework)</PackagePath>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+    <Content Include="..\CUE4Parse-Natives\bin\$(Configuration)\CUE4Parse-Natives.pdb" Condition="Exists('..\CUE4Parse-Natives\bin\$(Configuration)\CUE4Parse-Natives.pdb') And '$(Configuration)' == 'Debug' And '$(OS)' == 'Windows_NT'">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>false</Pack>
+    </Content>
+  </ItemGroup>
+
   <Target Name="Build-Natives" BeforeTargets="BeforeBuild" AfterTargets="AfterBuild">
     <MakeDir Directories="$(CMakeBuildDir)" Condition="!Exists('$(CMakeBuildDir)')" />
     <Exec Command="cmake .." ConsoleToMSBuild="true" WorkingDirectory="$(CMakeBuildDir)" IgnoreExitCode="true">
@@ -64,6 +77,7 @@
       <Output TaskParameter="ExitCode" PropertyName="CMakeExitCode" />
     </Exec>
     <Message Condition=" '$(CMakeExitCode)' != '0' " Importance="high" Text="CUE4Parse-Natives build failed. Continuing without it. ERROR: '$(OutputOfExec)'" />
+    <!-- 保留原有的条件包含作为备用 -->
     <ItemGroup Condition=" '$(CMakeExitCode)' == '0' ">
       <Content Include="..\CUE4Parse-Natives\bin\$(Configuration)\CUE4Parse-Natives.dll" Condition=" '$(OS)' == 'Windows_NT' ">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
