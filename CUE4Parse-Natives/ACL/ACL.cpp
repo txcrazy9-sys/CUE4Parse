@@ -2,7 +2,7 @@
 
 // Forward declaration
 template <bool bUseBindPose>
-void ProcessClips(const acl::compressed_tracks& tracks, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom);
+void ProcessClips(const acl::CompressedClip& clip, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom);
 
 template <bool bUseBindPose>
 void ProcessTracks(const acl::compressed_tracks& tracks, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom);
@@ -50,20 +50,28 @@ DLLEXPORT void nReadCurveACLData(const acl::compressed_tracks& tracks, float* ou
 }
 
 // For clip format decompression - simplified implementation
-DLLEXPORT void nReadACLClipData(const acl::compressed_tracks& tracks, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom)
+DLLEXPORT void nReadACLClipData(const acl::CompressedClip& clip, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom)
 {
     // For clip format, we use the same decompression logic as tracks
     // The main difference is in the memory layout and metadata handling
-    if (tracks.get_duration() != 0)
+    if (clip.get_size() != 0)
     {
-        ProcessClips<true>(tracks, inRefPoses, inTrackToSkeletonMap, outAtom);
+        ProcessClips<true>(clip, inRefPoses, inTrackToSkeletonMap, outAtom);
     }
     else
     {
-        ProcessClips<false>(tracks, inRefPoses, inTrackToSkeletonMap, outAtom);
+        ProcessClips<false>(clip, inRefPoses, inTrackToSkeletonMap, outAtom);
     }
 }
 
+// Get clip header information
+DLLEXPORT void nGetClipHeader(const acl::CompressedClip& clip, uint16_t* numBones, uint32_t* numSamples, float* sampleRate)
+{
+    const acl::ClipHeader& header = acl::get_clip_header(clip);
+    *numBones = header.num_bones;
+    *numSamples = header.num_samples;
+    *sampleRate = header.sample_rate;
+}
 
 template <bool bUseBindPose>
 void ProcessTracks(const acl::compressed_tracks& tracks, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom)
@@ -75,7 +83,8 @@ void ProcessTracks(const acl::compressed_tracks& tracks, FTransform* inRefPoses,
     DecompContextDefault context;
     context.initialize(tracks);
 
-    FCUE4ParseOutputWriter<bUseBindPose> writer(inRefPoses, inTrackToSkeletonMap, outAtom, numSamples);
+    // Use FCUE4ParseTrackWriter for compressed_tracks
+    FCUE4ParseTrackWriter<bUseBindPose> writer(inRefPoses, inTrackToSkeletonMap, outAtom, numSamples);
     for (uint32_t sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex)
     {
         const float sample_time = rtm::scalar_min(float(sampleIndex) / sampleRate, duration);
@@ -86,15 +95,18 @@ void ProcessTracks(const acl::compressed_tracks& tracks, FTransform* inRefPoses,
 }
 
 template <bool bUseBindPose>
-void ProcessClips(const acl::compressed_tracks& tracks, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom)
+void ProcessClips(const acl::CompressedClip& clip, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom)
 {
-    uint32_t numSamples = tracks.get_num_samples_per_track();
-    float sampleRate = tracks.get_sample_rate();
-    float duration = tracks.get_duration();
+    CompressedClipContext context;
+    context.initialize(clip);
+    
+    // Use get_clip_header() function instead of direct construction
+    const acl::ClipHeader& header = acl::get_clip_header(clip);
+    uint32_t numSamples = header.num_samples;
+    float sampleRate = header.sample_rate;
+    float duration = sampleRate > 0 ? float(numSamples) / sampleRate : 0.0f;
 
-    DecompContextDefault context;
-    context.initialize(tracks);
-
+    // Use FCUE4ParseOutputWriter for compressed clips
     FCUE4ParseOutputWriter<bUseBindPose> writer(inRefPoses, inTrackToSkeletonMap, outAtom, numSamples);
     for (uint32_t sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex)
     {

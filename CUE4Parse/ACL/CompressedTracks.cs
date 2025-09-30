@@ -65,6 +65,18 @@ namespace CUE4Parse.ACL
         }
 
         public TracksHeader GetTracksHeader() => Marshal.PtrToStructure<TracksHeader>(Handle + Marshal.SizeOf<RawBufferHeader>());
+        
+        public ClipHeader GetClipHeader()
+        {
+            nGetClipHeader(Handle, out ushort numBones, out uint numSamples, out float sampleRate);
+            return new ClipHeader
+            {
+                NumBones = numBones,
+                NumSamples = numSamples,
+                SampleRate = sampleRate
+            };
+        }
+        
         public void SetDefaultScale(uint scale) => nTracksHeader_SetDefaultScale(Handle + Marshal.SizeOf<RawBufferHeader>(), scale);
 
         [DllImport(LIB_NAME)]

@@ -30,6 +30,9 @@ namespace CUE4Parse.ACL
         [DllImport(LIB_NAME)]
         public static extern unsafe void nReadACLClipData(IntPtr compressedClip, FTransform* inRefPoses, FTrackToSkeletonMap* inTrackToSkeletonMap, FTransform* outAtom);
 
+        [DllImport(LIB_NAME)]
+        public static extern void nGetClipHeader(IntPtr compressedClip, out ushort numBones, out uint numSamples, out float sampleRate);
+
         // pure c# way:
         //var rawPtr = Marshal.AllocHGlobal(size + 8);
         //var aligned = new IntPtr(16 * (((long) rawPtr + 15) / 16));

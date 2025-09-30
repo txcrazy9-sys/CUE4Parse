@@ -25,4 +25,22 @@ namespace CUE4Parse.ACL
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetDefaultScale() => (int) (MiscPacked >> 1) & 1;
     }
+
+    public struct ClipHeader
+    {
+        public ushort NumBones;
+        public ushort NumSegments;
+        public byte RotationFormat;
+        public byte TranslationFormat;
+        public byte ScaleFormat;
+        public byte ClipRangeReduction;
+        public byte SegmentRangeReduction;
+        public byte HasScale;
+        public byte DefaultScale;
+        public byte Padding;
+        public uint NumSamples;
+        public float SampleRate;
+        // Note: We only expose the basic fields needed for header information
+        // The offset fields are not needed for basic header access
+    }
 }

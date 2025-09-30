@@ -174,11 +174,24 @@ namespace CUE4Parse_Conversion.Animations
                     // Use the standard GetCompressedTracks method - CompressedTracks constructor now handles both formats
                     var tracks = aclData.GetCompressedTracks();
 
-                    var tracksHeader = tracks.GetTracksHeader();
-                    var numSamples = (int) tracksHeader.NumSamples;
-
-                    // smh Valo has this set to 1, but it should be 0, right?
-                    if (animSequence.IsValidAdditive()) tracks.SetDefaultScale(0);
+                    int numSamples;
+                    
+                    // Check format first and get appropriate header
+                    if (IsClipFormat(aclData.CompressedByteStream))
+                    {
+                        // Handle as clip format - get clip header
+                        var clipHeader = tracks.GetClipHeader();
+                        numSamples = (int) clipHeader.NumSamples;
+                    }
+                    else
+                    {
+                        // Handle as tracks format - get tracks header
+                        var tracksHeader = tracks.GetTracksHeader();
+                        numSamples = (int) tracksHeader.NumSamples;
+                        
+                        // smh Valo has this set to 1, but it should be 0, right?
+                        if (animSequence.IsValidAdditive()) tracks.SetDefaultScale(0);
+                    }
 
                     // Let the native code do its job
                     var atomKeys = new FTransform[animSeq.Tracks.Capacity * numSamples];
